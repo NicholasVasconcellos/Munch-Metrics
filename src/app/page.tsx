@@ -17,9 +17,15 @@ const StatsBar = dynamic(() =>
 const ScrollTransition = dynamic(() =>
   import('@/components/landing/scroll-transition').then((m) => ({ default: m.ScrollTransition }))
 )
+const TutorialModal = dynamic(() =>
+  import('@/components/tutorial/tutorial-modal').then((m) => ({ default: m.TutorialModal }))
+)
+const TutorialTrigger = dynamic(() =>
+  import('@/components/tutorial/tutorial-trigger').then((m) => ({ default: m.TutorialTrigger }))
+)
 
 export default function Home() {
-  const [_tutorialOpen, setTutorialOpen] = useState(false)
+  const [tutorialOpen, setTutorialOpen] = useState(false)
 
   return (
     <>
@@ -45,6 +51,12 @@ export default function Home() {
         </div>
       </main>
       <Footer />
+
+      {/* Tutorial modal — code-split */}
+      <TutorialModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
+
+      {/* Floating help button with first-visit prompt */}
+      <TutorialTrigger onOpen={() => setTutorialOpen(true)} />
     </>
   )
 }
