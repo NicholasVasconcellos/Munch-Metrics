@@ -6,6 +6,17 @@ STATUS_DIR="$TASKS_DIR/status"
 MANIFEST="$TASKS_DIR/manifest.json"
 TASK_TIMEOUT="${TASK_TIMEOUT:-30m}"
 
+# ─── Timeout command (macOS compatibility) ───
+if command -v timeout &>/dev/null; then
+  TIMEOUT_CMD="timeout"
+elif command -v gtimeout &>/dev/null; then
+  TIMEOUT_CMD="gtimeout"
+else
+  echo "** 'timeout' not found. Tasks will run without a time limit."
+  echo "   Install coreutils for timeout support: brew install coreutils"
+  TIMEOUT_CMD=""
+fi
+
 # ─── Validation ───
 if [ ! -f "$MANIFEST" ]; then
   echo "!! Manifest not found: $MANIFEST"
@@ -101,7 +112,13 @@ while true; do
   git checkout -b "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
 
   # Execute
-  if timeout "$TASK_TIMEOUT" claude --dangerously-skip-permissions --model claude-sonnet-4-latest --no-thinking -p "/execute $TASK_ID"; then
+  CLAUDE_CMD=(claude --dangerously-skip-permissions --model claude-sonnet-4-latest -p "/execute $TASK_ID")
+  if [ -n "$TIMEOUT_CMD" ]; then
+    RUN_CMD=("$TIMEOUT_CMD" "$TASK_TIMEOUT" "${CLAUDE_CMD[@]}")
+  else
+    RUN_CMD=("${CLAUDE_CMD[@]}")
+  fi
+  if "${RUN_CMD[@]}"; then
     # Check if agent marked it done
     if is_done "$TASK_ID"; then
       echo ""
