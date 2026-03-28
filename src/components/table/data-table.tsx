@@ -19,9 +19,11 @@ import { tableColumns, IMAGE_COLUMN_ID } from './columns'
 import { SortIndicator } from './sort-indicator'
 import { ColumnPicker } from './column-picker'
 import { FilterBar } from './filter-bar'
+import { FilterPanel } from './filter-panel'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import type { ColumnKey } from '@/types/table'
+import type { FoodFilters } from '@/types/filters'
 import type { FoodComputed } from '@/types/food'
 import { DEFAULT_VISIBLE_COLUMNS } from '@/lib/url-state'
 
@@ -53,6 +55,7 @@ export function DataTable() {
   const [suggestions, setSuggestions] = React.useState<FoodComputed[]>([])
   const [showSuggestions, setShowSuggestions] = React.useState(false)
   const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>({})
+  const [filterPanelOpen, setFilterPanelOpen] = React.useState(false)
   const searchRef = React.useRef<HTMLInputElement>(null)
   const suggestionsRef = React.useRef<HTMLDivElement>(null)
 
@@ -182,6 +185,45 @@ export function DataTable() {
   const showingFrom = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1
   const showingTo = Math.min(currentPage * pageSize, totalCount)
 
+  function handleRemoveFilter(type: string, value: string) {
+    setTableConfig((prev) => {
+      const filters = { ...prev.filters }
+      if (type === 'dietary') {
+        filters.dietary = filters.dietary?.filter((t) => t !== value)
+        if (!filters.dietary?.length) delete filters.dietary
+      } else if (type === 'allergen') {
+        filters.excludeAllergens = filters.excludeAllergens?.filter((t) => t !== value)
+        if (!filters.excludeAllergens?.length) delete filters.excludeAllergens
+      } else if (type === 'foodGroup') {
+        filters.foodGroups = filters.foodGroups?.filter((g) => g !== value)
+        if (!filters.foodGroups?.length) delete filters.foodGroups
+      } else if (type === 'processingLevel') {
+        filters.processingLevels = filters.processingLevels?.filter((l) => l !== value)
+        if (!filters.processingLevels?.length) delete filters.processingLevels
+      } else if (type === 'nutrientRange') {
+        filters.nutrientRanges = filters.nutrientRanges?.filter((r) => r.nutrient !== value)
+        if (!filters.nutrientRanges?.length) delete filters.nutrientRanges
+      }
+      return { ...prev, filters, pagination: { ...prev.pagination, page: 1 } }
+    })
+  }
+
+  function handleClearAllFilters() {
+    setTableConfig((prev) => ({
+      ...prev,
+      filters: { search: prev.filters.search },
+      pagination: { ...prev.pagination, page: 1 },
+    }))
+  }
+
+  function handleApplyFilters(filters: FoodFilters) {
+    setTableConfig((prev) => ({
+      ...prev,
+      filters: { ...filters, search: prev.filters.search },
+      pagination: { ...prev.pagination, page: 1 },
+    }))
+  }
+
   function handleColumnToggle(key: ColumnKey) {
     const current = tableConfig.visibleColumns
     const next = current.includes(key)
@@ -259,8 +301,22 @@ export function DataTable() {
         </div>
       </div>
 
-      {/* Filter bar placeholder */}
-      <FilterBar filters={tableConfig.filters} />
+      {/* Filter bar */}
+      <FilterBar
+        filters={tableConfig.filters}
+        onRemove={handleRemoveFilter}
+        onOpenPanel={() => setFilterPanelOpen(true)}
+        onClearAll={handleClearAllFilters}
+      />
+
+      {/* Filter panel */}
+      <FilterPanel
+        open={filterPanelOpen}
+        onClose={() => setFilterPanelOpen(false)}
+        filters={tableConfig.filters}
+        onApply={handleApplyFilters}
+        onClearAll={handleClearAllFilters}
+      />
 
       {/* Table container */}
       <div className="relative rounded-lg border border-border overflow-hidden">
