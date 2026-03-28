@@ -1,0 +1,104 @@
+import type { TableConfig, ColumnKey, GroupByField } from '@/types/table'
+
+export const DEFAULT_VISIBLE_COLUMNS: ColumnKey[] = [
+  'name',
+  'caloriesPer100g',
+  'proteinPer100g',
+  'fatPer100g',
+  'carbsPer100g',
+  'foodGroup',
+]
+
+export const DEFAULT_PAGE_SIZE = 50
+
+export const DEFAULT_TABLE_CONFIG: TableConfig = {
+  filters: {},
+  sort: { field: 'name', direction: 'asc' },
+  groupBy: null,
+  visibleColumns: DEFAULT_VISIBLE_COLUMNS,
+  pagination: { page: 1, pageSize: DEFAULT_PAGE_SIZE },
+}
+
+const VALID_COLUMN_KEYS = new Set<ColumnKey>([
+  'name',
+  'foodGroup',
+  'caloriesPer100g',
+  'proteinPer100g',
+  'fatPer100g',
+  'carbsPer100g',
+  'fiberPer100g',
+  'sugarPer100g',
+  'sodiumPer100g',
+  'pricePer100g',
+  'proteinPerDollar',
+  'servingSizeG',
+  'dataSource',
+])
+
+const VALID_GROUP_BY = new Set<string>(['foodGroup', 'dataSource', 'processingLevel'])
+
+export function serializeTableState(config: TableConfig): URLSearchParams {
+  const params = new URLSearchParams()
+
+  if (config.filters.search?.trim()) {
+    params.set('q', config.filters.search.trim())
+  }
+
+  if (config.sort.field !== 'name' || config.sort.direction !== 'asc') {
+    params.set('sort', config.sort.field)
+    params.set('dir', config.sort.direction)
+  }
+
+  const defaultCols = DEFAULT_VISIBLE_COLUMNS.join(',')
+  const currentCols = config.visibleColumns.join(',')
+  if (currentCols !== defaultCols) {
+    params.set('cols', currentCols)
+  }
+
+  if (config.pagination.page > 1) {
+    params.set('page', String(config.pagination.page))
+  }
+
+  if (config.pagination.pageSize !== DEFAULT_PAGE_SIZE) {
+    params.set('ps', String(config.pagination.pageSize))
+  }
+
+  if (config.groupBy) {
+    params.set('group', config.groupBy)
+  }
+
+  return params
+}
+
+export function deserializeTableState(params: URLSearchParams): TableConfig {
+  const search = params.get('q') ?? undefined
+
+  const rawSort = params.get('sort') ?? 'name'
+  const sortField = VALID_COLUMN_KEYS.has(rawSort as ColumnKey)
+    ? (rawSort as ColumnKey)
+    : 'name'
+
+  const rawDir = params.get('dir') ?? 'asc'
+  const sortDir: 'asc' | 'desc' = rawDir === 'desc' ? 'desc' : 'asc'
+
+  const colsStr = params.get('cols')
+  const visibleColumns: ColumnKey[] = colsStr
+    ? (colsStr.split(',').filter((c) => VALID_COLUMN_KEYS.has(c as ColumnKey)) as ColumnKey[])
+    : DEFAULT_VISIBLE_COLUMNS
+
+  const page = Math.max(1, parseInt(params.get('page') ?? '1', 10) || 1)
+  const rawPs = parseInt(params.get('ps') ?? String(DEFAULT_PAGE_SIZE), 10)
+  const pageSize = [25, 50, 100].includes(rawPs) ? rawPs : DEFAULT_PAGE_SIZE
+
+  const rawGroup = params.get('group')
+  const groupBy: GroupByField =
+    rawGroup && VALID_GROUP_BY.has(rawGroup) ? (rawGroup as GroupByField) : null
+
+  return {
+    filters: { search },
+    sort: { field: sortField, direction: sortDir },
+    groupBy,
+    visibleColumns,
+    pagination: { page, pageSize },
+  }
+}
