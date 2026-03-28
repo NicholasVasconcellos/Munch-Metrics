@@ -1,0 +1,192 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* ─── Light mode defaults ─────────────────────────────────────────── */
+:root {
+  --radius: 0.5rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  /* Default brand accent: blue */
+  --brand: oklch(0.546 0.245 262.881);
+  --brand-foreground: oklch(0.985 0 0);
+}
+
+/* ─── Dark mode ───────────────────────────────────────────────────── */
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  /* Dark brand accent: blue */
+  --brand: oklch(0.623 0.214 259.815);
+  --brand-foreground: oklch(0.985 0 0);
+}
+
+/* ─── Accent color presets (data-accent attribute on :root) ───────── */
+/* Blue (default) */
+:root[data-accent="blue"],
+:root:not([data-accent]) {
+  --brand: oklch(0.546 0.245 262.881);
+  --brand-foreground: oklch(0.985 0 0);
+}
+:root[data-accent="blue"].dark,
+:root:not([data-accent]).dark,
+.dark:root[data-accent="blue"],
+.dark:root:not([data-accent]) {
+  --brand: oklch(0.623 0.214 259.815);
+}
+
+/* Green */
+:root[data-accent="green"] {
+  --brand: oklch(0.527 0.154 150.069);
+  --brand-foreground: oklch(0.985 0 0);
+}
+.dark:root[data-accent="green"],
+:root[data-accent="green"].dark {
+  --brand: oklch(0.696 0.17 162.48);
+}
+
+/* Teal */
+:root[data-accent="teal"] {
+  --brand: oklch(0.541 0.176 194.769);
+  --brand-foreground: oklch(0.985 0 0);
+}
+.dark:root[data-accent="teal"],
+:root[data-accent="teal"].dark {
+  --brand: oklch(0.704 0.14 182.503);
+}
+
+/* Orange */
+:root[data-accent="orange"] {
+  --brand: oklch(0.646 0.222 41.116);
+  --brand-foreground: oklch(0.985 0 0);
+}
+.dark:root[data-accent="orange"],
+:root[data-accent="orange"].dark {
+  --brand: oklch(0.75 0.183 55.934);
+}
+
+/* Purple */
+:root[data-accent="purple"] {
+  --brand: oklch(0.558 0.288 302.321);
+  --brand-foreground: oklch(0.985 0 0);
+}
+.dark:root[data-accent="purple"],
+:root[data-accent="purple"].dark {
+  --brand: oklch(0.702 0.183 293.541);
+}
+
+/* Rose */
+:root[data-accent="rose"] {
+  --brand: oklch(0.586 0.239 14.43);
+  --brand-foreground: oklch(0.985 0 0);
+}
+.dark:root[data-accent="rose"],
+:root[data-accent="rose"].dark {
+  --brand: oklch(0.712 0.194 13.428);
+}
+
+/* Yellow */
+:root[data-accent="yellow"] {
+  --brand: oklch(0.728 0.165 80.714);
+  --brand-foreground: oklch(0.205 0 0);
+}
+.dark:root[data-accent="yellow"],
+:root[data-accent="yellow"].dark {
+  --brand: oklch(0.795 0.184 86.047);
+  --brand-foreground: oklch(0.205 0 0);
+}
+
+/* Indigo */
+:root[data-accent="indigo"] {
+  --brand: oklch(0.511 0.262 276.966);
+  --brand-foreground: oklch(0.985 0 0);
+}
+.dark:root[data-accent="indigo"],
+:root[data-accent="indigo"].dark {
+  --brand: oklch(0.673 0.182 276.935);
+}
+
+/* Pink */
+:root[data-accent="pink"] {
+  --brand: oklch(0.601 0.209 332.36);
+  --brand-foreground: oklch(0.985 0 0);
+}
+.dark:root[data-accent="pink"],
+:root[data-accent="pink"].dark {
+  --brand: oklch(0.718 0.202 349.761);
+}
+
+/* ─── Base styles ─────────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}

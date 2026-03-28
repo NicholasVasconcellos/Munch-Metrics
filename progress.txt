@@ -6,3 +6,6 @@
 #   ISSUES: ...
 #   NEXT STEPS: ...
 
+=== Task 001 | Status: complete | 2026-03-28 ===
+CHANGES: Full project scaffolding. Next.js 15 (App Router), TypeScript strict mode, Tailwind CSS v4 (CSS-first config via @import and @theme inline), shadcn/ui components manually written (button, dialog, popover, dropdown-menu, toggle, separator), ThemeProvider (next-themes), ThemeToggle (light/dark/system), AccentPicker (9 presets: blue/green/teal/orange/purple/rose/yellow/indigo/pink via data-accent attribute on :root, persisted in localStorage), Header/Footer/MobileNav layout shell, root layout with Geist fonts, placeholder page.tsx, drizzle.config.ts, .env.local.example, components.json (shadcn config).
+NOTES: pnpm was not installed in the environment - installed globally via npm. Build scripts for esbuild/sharp/unrs-resolver required adding pnpm.onlyBuiltDependencies to package.json. tw-animate-css used instead of tailwindcss-animate (Tailwind v4 compatible). Accent colors implemented as :root[data-accent="X"] CSS selectors, not JS injection.

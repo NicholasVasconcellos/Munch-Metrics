@@ -1,0 +1,34 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment & secrets
+.env
+.env.*
+
+# Task runner state (lock dirs contain PIDs)
+tasks/status/*.lock/
+
+# Node / JS / TS
+node_modules/
+dist/
+build/
+.next/
+coverage/
+
+# pnpm
+.pnpm-store/
+
+# Drizzle
+drizzle/meta/
+
+# Misc
+*.log
+*.tsbuildinfo
