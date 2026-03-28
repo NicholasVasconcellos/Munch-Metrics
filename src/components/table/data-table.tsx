@@ -10,7 +10,7 @@ import {
   type ColumnSizingState,
   type PaginationState,
 } from '@tanstack/react-table'
-import { Search, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react'
+import { Search, ChevronLeft, ChevronRight, Loader2, Link, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react'
 import { useUrlState } from '@/hooks/use-url-state'
 import { useFoodQuery } from '@/hooks/use-food-query'
 import { useDebounce } from '@/hooks/use-debounce'
@@ -20,9 +20,11 @@ import { SortIndicator } from './sort-indicator'
 import { ColumnPicker } from './column-picker'
 import { FilterBar } from './filter-bar'
 import { FilterPanel } from './filter-panel'
+import { GroupSelector } from './group-selector'
+import { ExportCSV } from './export-csv'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import type { ColumnKey } from '@/types/table'
+import type { ColumnKey, GroupByField } from '@/types/table'
 import type { FoodFilters } from '@/types/filters'
 import type { FoodComputed } from '@/types/food'
 import { DEFAULT_VISIBLE_COLUMNS } from '@/lib/url-state'
@@ -46,6 +48,34 @@ function SkeletonRow({ columnCount }: { columnCount: number }) {
   )
 }
 
+/** Derive the group key for a row given the active groupBy field */
+function getGroupKey(row: FoodComputed, groupBy: GroupByField): string {
+  if (groupBy === 'foodGroup') return row.foodGroup ?? '(No Group)'
+  if (groupBy === 'dataSource') return row.dataSource ?? '(Unknown)'
+  if (groupBy === 'processingLevel') return '(Processing Level)'
+  return ''
+}
+
+/** Group consecutive rows by their group key */
+interface GroupedSection {
+  key: string
+  rows: FoodComputed[]
+}
+
+function groupRows(rows: FoodComputed[], groupBy: GroupByField): GroupedSection[] {
+  if (!groupBy) return []
+  const sections: GroupedSection[] = []
+  for (const row of rows) {
+    const key = getGroupKey(row, groupBy)
+    if (sections.length === 0 || sections[sections.length - 1].key !== key) {
+      sections.push({ key, rows: [row] })
+    } else {
+      sections[sections.length - 1].rows.push(row)
+    }
+  }
+  return sections
+}
+
 export function DataTable() {
   const { tableConfig, setTableConfig } = useUrlState()
   const { data, isLoading, error } = useFoodQuery(tableConfig)
@@ -56,6 +86,8 @@ export function DataTable() {
   const [showSuggestions, setShowSuggestions] = React.useState(false)
   const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>({})
   const [filterPanelOpen, setFilterPanelOpen] = React.useState(false)
+  const [collapsedGroups, setCollapsedGroups] = React.useState<Set<string>>(new Set())
+  const [copySuccess, setCopySuccess] = React.useState(false)
   const searchRef = React.useRef<HTMLInputElement>(null)
   const suggestionsRef = React.useRef<HTMLDivElement>(null)
 
@@ -109,6 +141,11 @@ export function DataTable() {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  // Reset collapsed groups when groupBy changes
+  React.useEffect(() => {
+    setCollapsedGroups(new Set())
+  }, [tableConfig.groupBy])
 
   // Convert our state to TanStack formats
   const sortingState: SortingState = [
@@ -185,6 +222,24 @@ export function DataTable() {
   const showingFrom = totalCount === 0 ? 0 : (currentPage - 1) * pageSize + 1
   const showingTo = Math.min(currentPage * pageSize, totalCount)
 
+  // Grouped sections for group-by rendering
+  const groupedSections = React.useMemo(
+    () => groupRows(data?.rows ?? [], tableConfig.groupBy),
+    [data?.rows, tableConfig.groupBy]
+  )
+
+  function toggleGroup(key: string) {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) {
+        next.delete(key)
+      } else {
+        next.add(key)
+      }
+      return next
+    })
+  }
+
   function handleRemoveFilter(type: string, value: string) {
     setTableConfig((prev) => {
       const filters = { ...prev.filters }
@@ -229,17 +284,31 @@ export function DataTable() {
     const next = current.includes(key)
       ? current.filter((k) => k !== key)
       : [...current, key]
-    // Keep at least one column visible
     if (next.length === 0) return
     setTableConfig((prev) => ({ ...prev, visibleColumns: next }))
+  }
+
+  function handleGroupChange(groupBy: GroupByField) {
+    setTableConfig((prev) => ({
+      ...prev,
+      groupBy,
+      pagination: { ...prev.pagination, page: 1 },
+    }))
+  }
+
+  function handleCopyLink() {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000)
+    })
   }
 
   return (
     <div className="flex flex-col gap-3">
       {/* Toolbar */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         {/* Search */}
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 min-w-48 max-w-sm">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground pointer-events-none" />
           <input
             ref={searchRef}
@@ -293,7 +362,19 @@ export function DataTable() {
           )}
         </div>
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="flex items-center gap-2 ml-auto">
+          <GroupSelector groupBy={tableConfig.groupBy} onChange={handleGroupChange} />
+          <ExportCSV rows={data?.rows ?? []} visibleColumns={tableConfig.visibleColumns} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopyLink}
+            className="h-8 gap-1.5"
+            title="Copy link to current view"
+          >
+            <Link className="size-3.5" />
+            <span className="hidden sm:inline">{copySuccess ? 'Copied!' : 'Copy Link'}</span>
+          </Button>
           <ColumnPicker
             visibleColumns={tableConfig.visibleColumns}
             onToggle={handleColumnToggle}
@@ -379,22 +460,75 @@ export function DataTable() {
             </thead>
             <tbody>
               {/* Skeleton on initial load */}
-              {isLoading && data === null
-                ? Array.from({ length: 10 }).map((_, i) => (
-                    <SkeletonRow key={i} columnCount={visibleLeafColumns.length} />
-                  ))
-                : rows.length === 0
-                ? (
-                  <tr>
-                    <td
-                      colSpan={visibleLeafColumns.length}
-                      className="px-3 py-12 text-center text-sm text-muted-foreground"
-                    >
-                      No foods found
-                    </td>
-                  </tr>
-                )
-                : rows.map((row) => (
+              {isLoading && data === null ? (
+                Array.from({ length: 10 }).map((_, i) => (
+                  <SkeletonRow key={i} columnCount={visibleLeafColumns.length} />
+                ))
+              ) : tableConfig.groupBy && groupedSections.length > 0 ? (
+                /* Grouped rendering */
+                groupedSections.map((section) => {
+                  const isCollapsed = collapsedGroups.has(section.key)
+                  return (
+                    <React.Fragment key={section.key}>
+                      {/* Group header row */}
+                      <tr
+                        className="border-b border-border bg-muted/60 cursor-pointer hover:bg-muted/80 transition-colors"
+                        onClick={() => toggleGroup(section.key)}
+                      >
+                        <td
+                          colSpan={visibleLeafColumns.length}
+                          className="px-3 py-2"
+                        >
+                          <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-foreground">
+                            {isCollapsed ? (
+                              <ChevronRightIcon className="size-3.5 text-muted-foreground" />
+                            ) : (
+                              <ChevronDown className="size-3.5 text-muted-foreground" />
+                            )}
+                            {section.key}
+                            <span className="ml-1 font-normal text-muted-foreground">
+                              ({section.rows.length})
+                            </span>
+                          </span>
+                        </td>
+                      </tr>
+                      {/* Group data rows */}
+                      {!isCollapsed &&
+                        rows
+                          .filter((r) => section.rows.some((sr) => sr.id === r.original.id))
+                          .map((row) => (
+                            <tr
+                              key={row.id}
+                              className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                            >
+                              {row.getVisibleCells().map((cell) => (
+                                <td
+                                  key={cell.id}
+                                  className={cn(
+                                    'px-3 py-2',
+                                    cell.column.id === IMAGE_COLUMN_ID && 'py-1.5'
+                                  )}
+                                  style={{ width: cell.column.getSize() }}
+                                >
+                                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                </td>
+                              ))}
+                            </tr>
+                          ))}
+                    </React.Fragment>
+                  )
+                })
+              ) : rows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={visibleLeafColumns.length}
+                    className="px-3 py-12 text-center text-sm text-muted-foreground"
+                  >
+                    No foods found
+                  </td>
+                </tr>
+              ) : (
+                rows.map((row) => (
                   <tr
                     key={row.id}
                     className="border-b border-border/50 hover:bg-muted/30 transition-colors"
@@ -412,7 +546,8 @@ export function DataTable() {
                       </td>
                     ))}
                   </tr>
-                ))}
+                ))
+              )}
             </tbody>
           </table>
         </div>
