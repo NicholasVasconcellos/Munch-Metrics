@@ -1,0 +1,18 @@
+{
+  "tasks": [
+    { "id": "001", "title": "Project Scaffolding & Theme System", "depends_on": [] },
+    { "id": "002", "title": "Database Schema & Migrations", "depends_on": ["001"] },
+    { "id": "003", "title": "USDA Data Seed Script", "depends_on": ["002"] },
+    { "id": "004", "title": "BLS Price Seed & Crosswalk", "depends_on": ["003"] },
+    { "id": "005", "title": "Tag Derivation Seed Script", "depends_on": ["003"] },
+    { "id": "006", "title": "Query Functions & Image Proxy", "depends_on": ["002"] },
+    { "id": "007", "title": "Core Data Table", "depends_on": ["006"] },
+    { "id": "008", "title": "Filter System", "depends_on": ["007"] },
+    { "id": "009", "title": "Grouping, CSV Export & URL Sharing", "depends_on": ["007"] },
+    { "id": "010", "title": "Mobile Layout & Food Detail Modal", "depends_on": ["007"] },
+    { "id": "011", "title": "Landing Page", "depends_on": ["001"] },
+    { "id": "012", "title": "Interactive Tutorial", "depends_on": ["011"] },
+    { "id": "013", "title": "Auth & Personalization", "depends_on": ["002"] },
+    { "id": "014", "title": "Testing & QA", "depends_on": ["008", "009", "010", "012", "013"] }
+  ]
+}
