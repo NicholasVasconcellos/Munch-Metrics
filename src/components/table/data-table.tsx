@@ -15,7 +15,10 @@ import { useUrlState } from '@/hooks/use-url-state'
 import { useFoodQuery } from '@/hooks/use-food-query'
 import { useDebounce } from '@/hooks/use-debounce'
 import { searchFoods } from '@/lib/queries/search-foods'
-import { tableColumns, IMAGE_COLUMN_ID } from './columns'
+import { createTableColumns, IMAGE_COLUMN_ID } from './columns'
+import { MobileRow } from './mobile-row'
+import { FoodDetailModal } from '@/components/food/food-detail-modal'
+import { useMediaQuery } from '@/hooks/use-media-query'
 import { SortIndicator } from './sort-indicator'
 import { ColumnPicker } from './column-picker'
 import { FilterBar } from './filter-bar'
@@ -88,6 +91,8 @@ export function DataTable() {
   const [filterPanelOpen, setFilterPanelOpen] = React.useState(false)
   const [collapsedGroups, setCollapsedGroups] = React.useState<Set<string>>(new Set())
   const [copySuccess, setCopySuccess] = React.useState(false)
+  const [selectedFoodId, setSelectedFoodId] = React.useState<string | null>(null)
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const searchRef = React.useRef<HTMLInputElement>(null)
   const suggestionsRef = React.useRef<HTMLDivElement>(null)
 
@@ -161,9 +166,18 @@ export function DataTable() {
     pageSize: tableConfig.pagination.pageSize,
   }
 
+  const handleOpenDetail = React.useCallback(
+    (id: string) => setSelectedFoodId(id),
+    []
+  )
+  const columns = React.useMemo(
+    () => createTableColumns(handleOpenDetail),
+    [handleOpenDetail]
+  )
+
   const table = useReactTable({
     data: data?.rows ?? [],
-    columns: tableColumns,
+    columns,
     state: {
       sorting: sortingState,
       columnVisibility,
@@ -399,8 +413,40 @@ export function DataTable() {
         onClearAll={handleClearAllFilters}
       />
 
-      {/* Table container */}
-      <div className="relative rounded-lg border border-border overflow-hidden">
+      {/* Mobile card layout */}
+      {isMobile && (
+        <div className="flex flex-col gap-2">
+          {isLoading && data === null ? (
+            Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="rounded-lg border border-border bg-card p-3 flex items-center gap-3 animate-pulse">
+                <div className="size-12 rounded bg-muted shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-muted rounded w-3/4" />
+                  <div className="h-3 bg-muted rounded w-1/2" />
+                </div>
+              </div>
+            ))
+          ) : error ? (
+            <div className="p-8 text-center text-sm text-destructive">
+              Failed to load data: {error}
+            </div>
+          ) : rows.length === 0 ? (
+            <div className="p-8 text-center text-sm text-muted-foreground">No foods found</div>
+          ) : (
+            rows.map((row) => (
+              <MobileRow
+                key={row.id}
+                food={row.original}
+                visibleColumns={tableConfig.visibleColumns}
+                onOpenDetail={handleOpenDetail}
+              />
+            ))
+          )}
+        </div>
+      )}
+
+      {/* Desktop table container */}
+      {!isMobile && <div className="relative rounded-lg border border-border overflow-hidden">
         {/* Loading overlay */}
         {isLoading && data !== null && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-[1px]">
@@ -551,7 +597,13 @@ export function DataTable() {
             </tbody>
           </table>
         </div>
-      </div>
+      </div>}
+
+      {/* Food detail modal */}
+      <FoodDetailModal
+        foodId={selectedFoodId}
+        onClose={() => setSelectedFoodId(null)}
+      />
 
       {/* Pagination */}
       <div className="flex items-center justify-between gap-4 text-sm flex-wrap">
