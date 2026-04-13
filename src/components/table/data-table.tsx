@@ -67,16 +67,17 @@ interface GroupedSection {
 
 function groupRows(rows: FoodComputed[], groupBy: GroupByField): GroupedSection[] {
   if (!groupBy) return []
-  const sections: GroupedSection[] = []
+  const map = new Map<string, FoodComputed[]>()
   for (const row of rows) {
     const key = getGroupKey(row, groupBy)
-    if (sections.length === 0 || sections[sections.length - 1].key !== key) {
-      sections.push({ key, rows: [row] })
+    const existing = map.get(key)
+    if (existing) {
+      existing.push(row)
     } else {
-      sections[sections.length - 1].rows.push(row)
+      map.set(key, [row])
     }
   }
-  return sections
+  return Array.from(map, ([key, rows]) => ({ key, rows }))
 }
 
 export function DataTable() {
