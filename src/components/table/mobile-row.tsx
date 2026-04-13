@@ -4,6 +4,7 @@ import * as React from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { FoodComputed } from '@/types/food'
+import { LazyFoodThumbnail } from '@/components/food/lazy-food-thumbnail'
 import type { ColumnKey } from '@/types/table'
 
 const COLUMN_LABELS: Record<ColumnKey, string> = {
@@ -71,8 +72,6 @@ export function MobileRow({ food, visibleColumns, onOpenDetail }: MobileRowProps
   const summaryKeys: ColumnKey[] = ['name', 'foodGroup', 'caloriesPer100g', 'proteinPer100g']
   const expandedColumns = visibleColumns.filter((k) => !summaryKeys.includes(k))
 
-  const thumbnailSrc = food.thumbnailUrl ?? food.imageUrl
-
   return (
     <div className="rounded-lg border border-border bg-card overflow-hidden">
       {/* Summary row */}
@@ -83,18 +82,12 @@ export function MobileRow({ food, visibleColumns, onOpenDetail }: MobileRowProps
         aria-expanded={expanded}
       >
         {/* Thumbnail */}
-        {thumbnailSrc ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={thumbnailSrc}
-            alt={food.name}
-            className="size-12 rounded object-cover shrink-0"
-          />
-        ) : (
-          <div className="size-12 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs shrink-0">
-            ?
-          </div>
-        )}
+        <LazyFoodThumbnail
+          foodId={food.id}
+          existingUrl={food.thumbnailUrl ?? food.imageUrl}
+          alt={food.name}
+          size={48}
+        />
 
         {/* Name + food group + quick stats */}
         <div className="flex-1 min-w-0">

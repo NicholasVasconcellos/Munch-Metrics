@@ -204,14 +204,44 @@ export function FoodDetailModal({ foodId, onClose }: FoodDetailModalProps) {
     setIsLoading(true)
     setDetail(null)
     setNotFound(false)
-    getFoodDetail(foodId).then((result) => {
+    getFoodDetail(foodId).then(async (result) => {
+      if (cancelled) return
+      if (!result) {
+        setIsLoading(false)
+        setNotFound(true)
+        return
+      }
+
+      // If no cached image, fetch one from the image API
+      if (!result.image) {
+        try {
+          const res = await fetch(`/api/images/${foodId}`)
+          if (!cancelled && res.ok) {
+            const json = await res.json()
+            if (json.image_url) {
+              result = {
+                ...result,
+                image: {
+                  id: '',
+                  foodId,
+                  imageUrl: json.image_url,
+                  thumbnailUrl: json.thumbnail_url ?? null,
+                  source: json.source ?? 'unsplash',
+                  photographerName: json.photographer_name ?? null,
+                  photographerUrl: json.photographer_url ?? null,
+                  fetchedAt: new Date(),
+                },
+              }
+            }
+          }
+        } catch {
+          // Image fetch failed — continue without image
+        }
+      }
+
       if (cancelled) return
       setIsLoading(false)
-      if (!result) {
-        setNotFound(true)
-      } else {
-        setDetail(result)
-      }
+      setDetail(result)
     })
     return () => {
       cancelled = true
@@ -223,10 +253,12 @@ export function FoodDetailModal({ foodId, onClose }: FoodDetailModalProps) {
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
+            <DialogTitle className="sr-only">Loading food details</DialogTitle>
             <Loader2 className="size-6 animate-spin text-muted-foreground" />
           </div>
         ) : notFound ? (
           <div className="py-16 text-center text-sm text-muted-foreground">
+            <DialogTitle className="sr-only">Food not found</DialogTitle>
             Food not found.
           </div>
         ) : detail ? (

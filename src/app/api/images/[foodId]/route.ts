@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
 import { foodImages, foods } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 
 const UNSPLASH_API_BASE = 'https://api.unsplash.com'
 
@@ -13,6 +13,15 @@ interface UnsplashPhoto {
 interface UnsplashSearchResponse {
   results: UnsplashPhoto[]
   total: number
+}
+
+/**
+ * Simplify a verbose USDA food name to a short search term.
+ * "Oranges, raw, navels" → "Oranges"
+ * "Cheese, cheddar (aged)" → "Cheese"
+ */
+function simplifyFoodName(name: string): string {
+  return name.split(',')[0].replace(/\s*\(.*?\)\s*/g, '').trim()
 }
 
 export async function GET(
@@ -51,6 +60,57 @@ export async function GET(
     return NextResponse.json({ error: 'Food not found' }, { status: 404 })
   }
 
+  const simplified = simplifyFoodName(food.name)
+
+  // Check if a sibling food with the same simplified name already has an image.
+  // e.g. "Oranges, raw, navels" can reuse the image from "Oranges, raw, California".
+  // This avoids redundant Unsplash API calls for variants of the same food.
+  const [sibling] = await db
+    .select({
+      imageUrl: foodImages.imageUrl,
+      thumbnailUrl: foodImages.thumbnailUrl,
+      source: foodImages.source,
+      photographerName: foodImages.photographerName,
+      photographerUrl: foodImages.photographerUrl,
+    })
+    .from(foodImages)
+    .innerJoin(foods, eq(foods.id, foodImages.foodId))
+    .where(sql`split_part(${foods.name}, ',', 1) = ${simplified}`)
+    .limit(1)
+
+  if (sibling) {
+    // Reuse the sibling's image for this food
+    await db
+      .insert(foodImages)
+      .values({
+        foodId,
+        imageUrl: sibling.imageUrl,
+        thumbnailUrl: sibling.thumbnailUrl,
+        source: sibling.source,
+        photographerName: sibling.photographerName,
+        photographerUrl: sibling.photographerUrl,
+      })
+      .onConflictDoUpdate({
+        target: foodImages.foodId,
+        set: {
+          imageUrl: sibling.imageUrl,
+          thumbnailUrl: sibling.thumbnailUrl,
+          photographerName: sibling.photographerName,
+          photographerUrl: sibling.photographerUrl,
+          fetchedAt: new Date(),
+        },
+      })
+
+    return NextResponse.json({
+      image_url: sibling.imageUrl,
+      thumbnail_url: sibling.thumbnailUrl,
+      source: sibling.source,
+      photographer_name: sibling.photographerName,
+      photographer_url: sibling.photographerUrl,
+      cached: true,
+    })
+  }
+
   const accessKey = process.env.UNSPLASH_ACCESS_KEY
   if (!accessKey) {
     return NextResponse.json(
@@ -60,7 +120,7 @@ export async function GET(
   }
 
   try {
-    const query = encodeURIComponent(food.name)
+    const query = encodeURIComponent(simplified || food.name)
     const response = await fetch(
       `${UNSPLASH_API_BASE}/search/photos?query=${query}&per_page=1&orientation=landscape`,
       {

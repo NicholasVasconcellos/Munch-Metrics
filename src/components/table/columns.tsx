@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table'
 import type { FoodComputed } from '@/types/food'
+import { LazyFoodThumbnail } from '@/components/food/lazy-food-thumbnail'
 
 function formatNum(value: string | null | undefined, decimals = 1): string {
   if (value == null) return '—'
@@ -40,22 +41,12 @@ export function createTableColumns(
       id: IMAGE_COLUMN_ID,
       header: '',
       cell: ({ row }) => {
-        const url = row.original.thumbnailUrl ?? row.original.imageUrl
-        const name = row.original.name
-        if (!url) {
-          return (
-            <div className="size-10 rounded bg-muted flex items-center justify-center text-muted-foreground text-xs shrink-0">
-              ?
-            </div>
-          )
-        }
+        const food = row.original
         return (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={url}
-            alt={name}
-            className="size-10 rounded object-cover shrink-0"
-            loading="lazy"
+          <LazyFoodThumbnail
+            foodId={food.id}
+            existingUrl={food.thumbnailUrl ?? food.imageUrl}
+            alt={food.name}
           />
         )
       },
