@@ -11,6 +11,8 @@ const COLUMN_HEADERS: Record<ColumnKey, string> = {
   fiberPer100g: 'Fiber (g/100g)',
   sugarPer100g: 'Sugars (g/100g)',
   sodiumPer100g: 'Sodium (mg/100g)',
+  calciumPer100g: 'Calcium (mg/100g)',
+  ironPer100g: 'Iron (mg/100g)',
   pricePer100g: 'Price ($/100g)',
   proteinPerDollar: 'Protein (g/$)',
   servingSizeG: 'Serving Size (g)',
@@ -26,16 +28,26 @@ function escapeCSV(value: string | null | undefined): string {
   return str
 }
 
-export function exportToCSV(rows: FoodComputed[], visibleColumns: ColumnKey[]): Blob {
-  const headers = visibleColumns.map((col) => COLUMN_HEADERS[col] ?? col)
+export function exportToCSV(
+  rows: FoodComputed[],
+  visibleColumns: ColumnKey[],
+  extraNutrients: string[] = []
+): Blob {
+  const headers = [
+    ...visibleColumns.map((col) => COLUMN_HEADERS[col] ?? col),
+    ...extraNutrients,
+  ]
   const lines: string[] = [headers.map(escapeCSV).join(',')]
 
   for (const row of rows) {
-    const cells = visibleColumns.map((col) => {
+    const staticCells = visibleColumns.map((col) => {
       const value = row[col as keyof FoodComputed]
       return escapeCSV(value as string | null | undefined)
     })
-    lines.push(cells.join(','))
+    const extraCells = extraNutrients.map((name) =>
+      escapeCSV(row.extraNutrients?.[name])
+    )
+    lines.push([...staticCells, ...extraCells].join(','))
   }
 
   return new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' })

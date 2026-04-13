@@ -21,6 +21,7 @@ export function useFoodQuery(config: TableConfig): UseFoodQueryResult {
     filters: config.filters,
     sort: config.sort,
     groupBy: config.groupBy,
+    extraNutrients: config.extraNutrients,
     page: config.pagination.page,
     pageSize: config.pagination.pageSize,
   })
@@ -34,6 +35,7 @@ export function useFoodQuery(config: TableConfig): UseFoodQueryResult {
       filters: config.filters,
       sort: config.sort,
       groupBy: config.groupBy,
+      extraNutrients: config.extraNutrients,
       page: config.pagination.page,
       pageSize: config.pagination.pageSize,
     })

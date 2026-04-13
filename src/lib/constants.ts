@@ -159,6 +159,8 @@ export const SORT_COLUMN_MAP: Record<ColumnKey, string> = {
   fiberPer100g: 'fiber_per_100g',
   sugarPer100g: 'sugar_per_100g',
   sodiumPer100g: 'sodium_per_100g',
+  calciumPer100g: 'calcium_per_100g',
+  ironPer100g: 'iron_per_100g',
   pricePer100g: 'price_per_100g',
   proteinPerDollar: 'protein_per_dollar',
   servingSizeG: 'serving_size_g',

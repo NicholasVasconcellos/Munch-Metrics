@@ -15,12 +15,12 @@ import { useUrlState } from '@/hooks/use-url-state'
 import { useFoodQuery } from '@/hooks/use-food-query'
 import { useDebounce } from '@/hooks/use-debounce'
 import { searchFoods } from '@/lib/queries/search-foods'
-import { createTableColumns, IMAGE_COLUMN_ID } from './columns'
+import { createTableColumns, createExtraNutrientColumns, IMAGE_COLUMN_ID } from './columns'
 import { MobileRow } from './mobile-row'
 import { FoodDetailModal } from '@/components/food/food-detail-modal'
 import { useMediaQuery } from '@/hooks/use-media-query'
 import { SortIndicator } from './sort-indicator'
-import { ColumnPicker } from './column-picker'
+import { ColumnPanel, ColumnPanelTrigger } from './column-panel'
 import { FilterBar } from './filter-bar'
 import { FilterPanel } from './filter-panel'
 import { GroupSelector } from './group-selector'
@@ -30,11 +30,12 @@ import { cn } from '@/lib/utils'
 import type { ColumnKey, GroupByField } from '@/types/table'
 import type { FoodFilters } from '@/types/filters'
 import type { FoodComputed } from '@/types/food'
-import { DEFAULT_VISIBLE_COLUMNS } from '@/lib/url-state'
+import { DEFAULT_VISIBLE_COLUMNS, DEFAULT_TABLE_CONFIG } from '@/lib/url-state'
 
 const ALL_SORTABLE_COLUMN_KEYS: ColumnKey[] = [
   'name', 'foodGroup', 'caloriesPer100g', 'proteinPer100g', 'fatPer100g',
   'carbsPer100g', 'fiberPer100g', 'sugarPer100g', 'sodiumPer100g',
+  'calciumPer100g', 'ironPer100g',
   'pricePer100g', 'proteinPerDollar', 'servingSizeG', 'dataSource',
 ]
 
@@ -89,6 +90,8 @@ export function DataTable() {
   const [showSuggestions, setShowSuggestions] = React.useState(false)
   const [columnSizing, setColumnSizing] = React.useState<ColumnSizingState>({})
   const [filterPanelOpen, setFilterPanelOpen] = React.useState(false)
+  const [columnPanelOpen, setColumnPanelOpen] = React.useState(false)
+  const [nutrientUnitMap, setNutrientUnitMap] = React.useState<Record<string, string>>({})
   const [collapsedGroups, setCollapsedGroups] = React.useState<Set<string>>(new Set())
   const [copySuccess, setCopySuccess] = React.useState(false)
   const [selectedFoodId, setSelectedFoodId] = React.useState<string | null>(null)
@@ -170,9 +173,13 @@ export function DataTable() {
     (id: string) => setSelectedFoodId(id),
     []
   )
+  const extraNutrients = tableConfig.extraNutrients
   const columns = React.useMemo(
-    () => createTableColumns(handleOpenDetail),
-    [handleOpenDetail]
+    () => [
+      ...createTableColumns(handleOpenDetail),
+      ...createExtraNutrientColumns(extraNutrients, nutrientUnitMap),
+    ],
+    [handleOpenDetail, extraNutrients, nutrientUnitMap]
   )
 
   const table = useReactTable({
@@ -302,6 +309,24 @@ export function DataTable() {
     setTableConfig((prev) => ({ ...prev, visibleColumns: next }))
   }
 
+  function handleNutrientToggle(nutrientName: string) {
+    setTableConfig((prev) => {
+      const current = prev.extraNutrients
+      const next = current.includes(nutrientName)
+        ? current.filter((n) => n !== nutrientName)
+        : [...current, nutrientName]
+      return { ...prev, extraNutrients: next }
+    })
+  }
+
+  function handleResetColumns() {
+    setTableConfig((prev) => ({
+      ...prev,
+      visibleColumns: DEFAULT_TABLE_CONFIG.visibleColumns,
+      extraNutrients: [],
+    }))
+  }
+
   function handleGroupChange(groupBy: GroupByField) {
     setTableConfig((prev) => ({
       ...prev,
@@ -378,7 +403,7 @@ export function DataTable() {
 
         <div className="flex items-center gap-2 ml-auto">
           <GroupSelector groupBy={tableConfig.groupBy} onChange={handleGroupChange} />
-          <ExportCSV rows={data?.rows ?? []} visibleColumns={tableConfig.visibleColumns} />
+          <ExportCSV rows={data?.rows ?? []} visibleColumns={tableConfig.visibleColumns} extraNutrients={tableConfig.extraNutrients} />
           <Button
             variant="outline"
             size="sm"
@@ -389,10 +414,7 @@ export function DataTable() {
             <Link className="size-3.5" />
             <span className="hidden sm:inline">{copySuccess ? 'Copied!' : 'Copy Link'}</span>
           </Button>
-          <ColumnPicker
-            visibleColumns={tableConfig.visibleColumns}
-            onToggle={handleColumnToggle}
-          />
+          <ColumnPanelTrigger onClick={() => setColumnPanelOpen(true)} />
         </div>
       </div>
 
@@ -411,6 +433,17 @@ export function DataTable() {
         filters={tableConfig.filters}
         onApply={handleApplyFilters}
         onClearAll={handleClearAllFilters}
+      />
+
+      {/* Column panel */}
+      <ColumnPanel
+        open={columnPanelOpen}
+        onClose={() => setColumnPanelOpen(false)}
+        visibleColumns={tableConfig.visibleColumns}
+        extraNutrients={tableConfig.extraNutrients}
+        onToggleColumn={handleColumnToggle}
+        onToggleNutrient={handleNutrientToggle}
+        onResetToDefault={handleResetColumns}
       />
 
       {/* Mobile card layout */}
@@ -438,6 +471,7 @@ export function DataTable() {
                 key={row.id}
                 food={row.original}
                 visibleColumns={tableConfig.visibleColumns}
+                extraNutrients={tableConfig.extraNutrients}
                 onOpenDetail={handleOpenDetail}
               />
             ))

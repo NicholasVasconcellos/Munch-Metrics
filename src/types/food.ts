@@ -69,4 +69,7 @@ export interface FoodComputed {
   // Image
   imageUrl: string | null
   thumbnailUrl: string | null
+
+  // Dynamic nutrient columns (fetched via LEFT JOIN LATERAL)
+  extraNutrients?: Record<string, string | null>
 }

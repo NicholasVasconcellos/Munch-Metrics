@@ -1,4 +1,5 @@
 import type { TableConfig, ColumnKey, GroupByField } from '@/types/table'
+import { MAX_EXTRA_NUTRIENTS } from '@/types/table'
 import type { DietaryTag, AllergenTag, ProcessingLevel, NutrientRangeFilter } from '@/types/filters'
 import { NUTRIENT_COLUMN_MAP } from '@/lib/constants'
 
@@ -33,6 +34,7 @@ export const DEFAULT_TABLE_CONFIG: TableConfig = {
   sort: { field: 'name', direction: 'asc' },
   groupBy: null,
   visibleColumns: DEFAULT_VISIBLE_COLUMNS,
+  extraNutrients: [],
   pagination: { page: 1, pageSize: DEFAULT_PAGE_SIZE },
 }
 
@@ -46,6 +48,8 @@ const VALID_COLUMN_KEYS = new Set<ColumnKey>([
   'fiberPer100g',
   'sugarPer100g',
   'sodiumPer100g',
+  'calciumPer100g',
+  'ironPer100g',
   'pricePer100g',
   'proteinPerDollar',
   'servingSizeG',
@@ -103,6 +107,10 @@ export function serializeTableState(config: TableConfig): URLSearchParams {
 
   if (config.pagination.pageSize !== DEFAULT_PAGE_SIZE) {
     params.set('ps', String(config.pagination.pageSize))
+  }
+
+  if (config.extraNutrients?.length) {
+    params.set('en', config.extraNutrients.join('|'))
   }
 
   if (config.groupBy) {
@@ -168,6 +176,11 @@ export function deserializeTableState(params: URLSearchParams): TableConfig {
   const rawPs = parseInt(params.get('ps') ?? String(DEFAULT_PAGE_SIZE), 10)
   const pageSize = [25, 50, 100].includes(rawPs) ? rawPs : DEFAULT_PAGE_SIZE
 
+  const enStr = params.get('en')
+  const extraNutrients: string[] = enStr
+    ? enStr.split('|').filter(Boolean).slice(0, MAX_EXTRA_NUTRIENTS)
+    : []
+
   const rawGroup = params.get('group')
   const groupBy: GroupByField =
     rawGroup && VALID_GROUP_BY.has(rawGroup) ? (rawGroup as GroupByField) : null
@@ -184,6 +197,7 @@ export function deserializeTableState(params: URLSearchParams): TableConfig {
     sort: { field: sortField, direction: sortDir },
     groupBy,
     visibleColumns,
+    extraNutrients,
     pagination: { page, pageSize },
   }
 }

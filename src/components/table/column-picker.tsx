@@ -20,6 +20,8 @@ const COLUMN_OPTIONS: ColumnMeta[] = [
   { key: 'fiberPer100g', label: 'Fiber' },
   { key: 'sugarPer100g', label: 'Sugars' },
   { key: 'sodiumPer100g', label: 'Sodium' },
+  { key: 'calciumPer100g', label: 'Calcium' },
+  { key: 'ironPer100g', label: 'Iron' },
   { key: 'pricePer100g', label: 'Price / 100g' },
   { key: 'proteinPerDollar', label: 'Protein / $' },
   { key: 'servingSizeG', label: 'Serving Size' },

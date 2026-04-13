@@ -2,6 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table'
 import type { FoodComputed } from '@/types/food'
+import type { AvailableNutrient } from '@/lib/queries/get-available-nutrients'
 
 function formatNum(value: string | null | undefined, decimals = 1): string {
   if (value == null) return '—'
@@ -173,6 +174,26 @@ export function createTableColumns(
       minSize: 70,
     },
     {
+      accessorKey: 'calciumPer100g',
+      header: 'Calcium',
+      cell: ({ getValue }) => (
+        <NumericCell value={getValue() as string | null} decimals={0} suffix=" mg" />
+      ),
+      enableSorting: true,
+      size: 95,
+      minSize: 70,
+    },
+    {
+      accessorKey: 'ironPer100g',
+      header: 'Iron',
+      cell: ({ getValue }) => (
+        <NumericCell value={getValue() as string | null} suffix=" mg" />
+      ),
+      enableSorting: true,
+      size: 80,
+      minSize: 60,
+    },
+    {
       accessorKey: 'pricePer100g',
       header: 'Price / 100g',
       cell: ({ getValue }) => {
@@ -230,3 +251,28 @@ export function createTableColumns(
 
 /** Static column definitions (no click handler) — kept for backward compatibility. */
 export const tableColumns = createTableColumns()
+
+/**
+ * Creates dynamic TanStack column definitions for extra nutrients fetched from the DB.
+ * Sorting is disabled for dynamic columns (v1).
+ */
+export function createExtraNutrientColumns(
+  nutrientNames: string[],
+  unitMap: Record<string, string>
+): ColumnDef<FoodComputed>[] {
+  return nutrientNames.map((name) => {
+    const unit = unitMap[name] ?? ''
+    const suffix = unit ? ` ${unit}` : ''
+    return {
+      id: `en_${name}`,
+      header: name,
+      accessorFn: (row: FoodComputed) => row.extraNutrients?.[name] ?? null,
+      cell: ({ getValue }: { getValue: () => unknown }) => (
+        <NumericCell value={getValue() as string | null} suffix={suffix} />
+      ),
+      enableSorting: false,
+      size: 100,
+      minSize: 70,
+    } satisfies ColumnDef<FoodComputed>
+  })
+}

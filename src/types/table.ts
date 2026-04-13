@@ -12,6 +12,8 @@ export type ColumnKey =
   | 'fiberPer100g'
   | 'sugarPer100g'
   | 'sodiumPer100g'
+  | 'calciumPer100g'
+  | 'ironPer100g'
   | 'pricePer100g'
   | 'proteinPerDollar'
   | 'servingSizeG'
@@ -37,11 +39,15 @@ export interface PaginationConfig {
 
 // ─── Full Table Config ────────────────────────────────────────────────────────
 
+/** Maximum number of dynamic nutrient columns that can be selected */
+export const MAX_EXTRA_NUTRIENTS = 20
+
 export interface TableConfig {
   filters: FoodFilters
   sort: SortConfig
   groupBy: GroupByField
   visibleColumns: ColumnKey[]
+  extraNutrients: string[]
   pagination: PaginationConfig
 }
 
