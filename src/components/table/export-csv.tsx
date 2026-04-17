@@ -9,11 +9,12 @@ import type { ColumnKey } from '@/types/table'
 interface ExportCSVProps {
   rows: FoodComputed[]
   visibleColumns: ColumnKey[]
+  extraNutrients?: string[]
 }
 
-export function ExportCSV({ rows, visibleColumns }: ExportCSVProps) {
+export function ExportCSV({ rows, visibleColumns, extraNutrients = [] }: ExportCSVProps) {
   function handleExport() {
-    const blob = exportToCSV(rows, visibleColumns)
+    const blob = exportToCSV(rows, visibleColumns, extraNutrients)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

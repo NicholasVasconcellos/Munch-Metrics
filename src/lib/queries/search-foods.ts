@@ -6,11 +6,13 @@ import type { FoodComputed } from '@/types/food'
 import type { FoodFilters } from '@/types/filters'
 import type { SortConfig, GroupByField, TableQueryResult } from '@/types/table'
 import { SORT_COLUMN_MAP, NUTRIENT_COLUMN_MAP } from '@/lib/constants'
+import { MAX_EXTRA_NUTRIENTS } from '@/types/table'
 
 interface SearchFoodsParams {
   filters?: FoodFilters
   sort?: SortConfig
   groupBy?: GroupByField
+  extraNutrients?: string[]
   page?: number
   pageSize?: number
 }
@@ -20,9 +22,12 @@ export async function searchFoods({
   filters = {},
   sort = { field: 'name', direction: 'asc' },
   groupBy = null,
+  extraNutrients = [],
   page = 1,
   pageSize = 50,
 }: SearchFoodsParams): Promise<TableQueryResult<FoodComputed>> {
+  // Cap extra nutrients to prevent query performance degradation
+  const safeExtraNutrients = extraNutrients.slice(0, MAX_EXTRA_NUTRIENTS)
   const conditions: SQL[] = []
 
   // Text search using pg_trgm similarity
@@ -127,6 +132,27 @@ export async function searchFoods({
   const countRow = countResult.rows[0] as Record<string, string> | undefined
   const totalCount = parseInt(countRow?.count ?? '0', 10)
 
+  // Build LEFT JOIN LATERAL clauses for dynamic nutrient columns
+  const extraJoins: SQL[] = []
+  const extraSelects: SQL[] = []
+  for (let i = 0; i < safeExtraNutrients.length; i++) {
+    const nutrientName = safeExtraNutrients[i]
+    const alias = `en_${i}`
+    extraJoins.push(sql`LEFT JOIN LATERAL (
+      SELECT per_100g FROM nutrients
+      WHERE food_id = fc.id AND nutrient_name = ${nutrientName}
+      LIMIT 1
+    ) ${sql.raw(alias)} ON true`)
+    extraSelects.push(sql`${sql.raw(alias)}.per_100g AS ${sql.raw(`"extraNutrient_${i}"`)}`)
+  }
+
+  const extraSelectClause = extraSelects.length > 0
+    ? sql`, ${sql.join(extraSelects, sql`, `)}`
+    : sql``
+  const extraJoinClause = extraJoins.length > 0
+    ? sql`${sql.join(extraJoins, sql` `)}`
+    : sql``
+
   // Data query — alias columns to camelCase for TypeScript mapping
   const dataResult = await db.execute(sql`
     SELECT
@@ -153,15 +179,31 @@ export async function searchFoods({
       fc.protein_per_dollar  AS "proteinPerDollar",
       fc.image_url           AS "imageUrl",
       fc.thumbnail_url       AS "thumbnailUrl"
+      ${extraSelectClause}
     FROM food_computed fc
+    ${extraJoinClause}
     ${whereClause}
     ${orderByClause}
     LIMIT ${pageSize}
     OFFSET ${offset}
   `)
 
+  // Map extra nutrient columns into the extraNutrients record
+  const rows = (dataResult.rows as Record<string, unknown>[]).map((row) => {
+    if (safeExtraNutrients.length === 0) return row as unknown as FoodComputed
+
+    const extraNutrientsMap: Record<string, string | null> = {}
+    for (let i = 0; i < safeExtraNutrients.length; i++) {
+      const rawValue = row[`extraNutrient_${i}`]
+      extraNutrientsMap[safeExtraNutrients[i]] =
+        rawValue != null ? String(rawValue) : null
+      delete row[`extraNutrient_${i}`]
+    }
+    return { ...row, extraNutrients: extraNutrientsMap } as unknown as FoodComputed
+  })
+
   return {
-    rows: dataResult.rows as unknown as FoodComputed[],
+    rows,
     totalCount,
     page,
     pageSize,

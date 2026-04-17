@@ -17,6 +17,8 @@ const COLUMN_LABELS: Record<ColumnKey, string> = {
   fiberPer100g: 'Fiber',
   sugarPer100g: 'Sugars',
   sodiumPer100g: 'Sodium',
+  calciumPer100g: 'Calcium',
+  ironPer100g: 'Iron',
   pricePer100g: 'Price',
   proteinPerDollar: 'Protein / $',
   servingSizeG: 'Serving Size',
@@ -31,9 +33,14 @@ function formatValue(food: FoodComputed, key: ColumnKey): string {
       const n = parseFloat(value as string)
       return isNaN(n) ? '—' : `${n.toFixed(0)} kcal`
     }
-    case 'sodiumPer100g': {
+    case 'sodiumPer100g':
+    case 'calciumPer100g': {
       const n = parseFloat(value as string)
       return isNaN(n) ? '—' : `${n.toFixed(0)} mg`
+    }
+    case 'ironPer100g': {
+      const n = parseFloat(value as string)
+      return isNaN(n) ? '—' : `${n.toFixed(1)} mg`
     }
     case 'proteinPer100g':
     case 'fatPer100g':
@@ -62,10 +69,11 @@ function formatValue(food: FoodComputed, key: ColumnKey): string {
 interface MobileRowProps {
   food: FoodComputed
   visibleColumns: ColumnKey[]
+  extraNutrients?: string[]
   onOpenDetail: (id: string) => void
 }
 
-export function MobileRow({ food, visibleColumns, onOpenDetail }: MobileRowProps) {
+export function MobileRow({ food, visibleColumns, extraNutrients = [], onOpenDetail }: MobileRowProps) {
   const [expanded, setExpanded] = React.useState(false)
 
   // Columns to show in the expanded section (exclude summary fields)
@@ -149,9 +157,20 @@ export function MobileRow({ food, visibleColumns, onOpenDetail }: MobileRowProps
                 <span className="font-mono tabular-nums">{formatValue(food, key)}</span>
               </div>
             ))
-          ) : (
+          ) : extraNutrients.length === 0 ? (
             <p className="text-xs text-muted-foreground">No additional columns visible.</p>
-          )}
+          ) : null}
+          {extraNutrients.map((name) => {
+            const val = food.extraNutrients?.[name]
+            return (
+              <div key={name} className="flex justify-between items-center text-xs">
+                <span className="text-muted-foreground truncate mr-2">{name}</span>
+                <span className="font-mono tabular-nums shrink-0">
+                  {val != null ? parseFloat(val).toFixed(1) : '—'}
+                </span>
+              </div>
+            )
+          })}
           <button
             type="button"
             className="w-full mt-2 text-xs text-left underline text-muted-foreground hover:text-foreground transition-colors"

@@ -138,6 +138,7 @@ describe('deserializeTableState', () => {
     expect(config.sort.field).toBe('name')
     expect(config.sort.direction).toBe('asc')
     expect(config.visibleColumns).toEqual(DEFAULT_VISIBLE_COLUMNS)
+    expect(config.extraNutrients).toEqual([])
     expect(config.pagination.page).toBe(1)
     expect(config.pagination.pageSize).toBe(DEFAULT_PAGE_SIZE)
     expect(config.groupBy).toBeNull()
@@ -292,11 +293,23 @@ describe('round-trip serialize/deserialize', () => {
       sort: { field: 'proteinPer100g', direction: 'desc' },
       groupBy: 'foodGroup',
       visibleColumns: ['name', 'proteinPer100g', 'caloriesPer100g'],
+      extraNutrients: [],
       pagination: { page: 2, pageSize: 25 },
     }
     const params = serializeTableState(original)
     const restored = deserializeTableState(params)
     expect(restored).toEqual(original)
+  })
+
+  it('preserves extraNutrients across round-trip', () => {
+    const original: TableConfig = {
+      ...DEFAULT_TABLE_CONFIG,
+      extraNutrients: ['Vitamin C, total ascorbic acid', 'Iron, Fe'],
+    }
+    const params = serializeTableState(original)
+    expect(params.get('en')).toBe('Vitamin C, total ascorbic acid|Iron, Fe')
+    const restored = deserializeTableState(params)
+    expect(restored.extraNutrients).toEqual(original.extraNutrients)
   })
 
   it('preserves default config across round-trip', () => {

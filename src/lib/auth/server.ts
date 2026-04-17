@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { db } from '@/lib/db'
 import { userPreferences, savedViews } from '@/lib/db/schema'
-import { eq } from 'drizzle-orm'
+import { eq, and } from 'drizzle-orm'
 
 // ─── Internal: Server-side session verification ───────────────────────────────
 
@@ -132,5 +132,13 @@ export async function saveView(
       .returning()
 
     return view!
+  })
+}
+
+export async function deleteView(userId: string, viewId: string) {
+  return withAuth(userId, async (uid) => {
+    await db
+      .delete(savedViews)
+      .where(and(eq(savedViews.id, viewId), eq(savedViews.userId, uid)))
   })
 }
