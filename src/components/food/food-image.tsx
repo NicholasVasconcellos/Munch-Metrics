@@ -9,11 +9,22 @@ import { cn } from '@/lib/utils'
 const BLUR_DATA_URL =
   'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSIjZTVlN2ViIi8+PC9zdmc+'
 
+const OPTIMIZED_HOSTS = ['images.unsplash.com', 'plus.unsplash.com', 'images.pexels.com']
+
+function canOptimize(url: string): boolean {
+  try {
+    return OPTIMIZED_HOSTS.includes(new URL(url).hostname)
+  } catch {
+    return false
+  }
+}
+
 interface FoodImageProps {
   src: string | null | undefined
   alt: string
   photographerName?: string | null
   photographerUrl?: string | null
+  source?: string | null
   showAttribution?: boolean
   className?: string
 }
@@ -23,6 +34,7 @@ export function FoodImage({
   alt,
   photographerName,
   photographerUrl,
+  source,
   showAttribution = false,
   className,
 }: FoodImageProps) {
@@ -50,6 +62,8 @@ export function FoodImage({
           blurDataURL={BLUR_DATA_URL}
           onError={() => setError(true)}
           sizes="(max-width: 640px) 100vw, 400px"
+          unoptimized={!canOptimize(src)}
+          loading="eager"
         />
       </div>
       {showAttribution && photographerName && (
@@ -69,12 +83,12 @@ export function FoodImage({
           )}{' '}
           on{' '}
           <a
-            href="https://unsplash.com"
+            href={source === 'pexels' ? 'https://www.pexels.com' : 'https://unsplash.com'}
             target="_blank"
             rel="noopener noreferrer"
             className="underline hover:text-foreground transition-colors"
           >
-            Unsplash
+            {source === 'pexels' ? 'Pexels' : 'Unsplash'}
           </a>
         </p>
       )}

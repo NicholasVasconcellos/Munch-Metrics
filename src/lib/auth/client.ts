@@ -6,7 +6,7 @@ import type { User, Session } from '@supabase/supabase-js'
 // These are safe at module level: they evaluate to undefined when not set,
 // and are only used inside getClient() which runs on the client.
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ''
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? ''
+const supabasePublishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? ''
 
 // Cookie storage adapter so the session is readable server-side in server actions
 const cookieStorage = {
@@ -33,7 +33,7 @@ let _client: ReturnType<typeof createClient> | undefined
 
 function getClient() {
   if (!_client) {
-    _client = createClient(supabaseUrl, supabaseAnonKey, {
+    _client = createClient(supabaseUrl, supabasePublishableKey, {
       auth: {
         storage: cookieStorage,
         persistSession: true,

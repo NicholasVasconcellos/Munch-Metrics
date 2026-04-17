@@ -37,6 +37,8 @@ export const priceSourceEnum = pgEnum('price_source', [
 
 export const imageSourceEnum = pgEnum('image_source', [
   'unsplash',
+  'google',
+  'pexels',
   'manual',
 ])
 

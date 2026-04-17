@@ -1,3 +1,7 @@
+// DEPRECATED: Migrations are now managed via Supabase CLI.
+// Use `supabase db push` to apply migrations from supabase/migrations/.
+// This file is kept for reference only.
+
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
 import { db } from './index'
 

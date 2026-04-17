@@ -797,7 +797,7 @@ DATABASE_URL=postgresql://user:password@<oracle-vm-ip>:5432/munch_metrics?sslmod
 
 # Supabase (Auth only — no database usage)
 NEXT_PUBLIC_SUPABASE_URL=              # Supabase project URL (for auth client)
-NEXT_PUBLIC_SUPABASE_ANON_KEY=         # Supabase anon key (for auth client)
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=  # Supabase publishable key (for auth client)
 
 # USDA FoodData Central
 USDA_API_KEY=                       # Free, get from https://fdc.nal.usda.gov/api-key-signup

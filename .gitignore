@@ -29,6 +29,10 @@ coverage/
 # Drizzle
 drizzle/meta/
 
+# Supabase
+supabase/.temp/
+supabase/.branches/
+
 # Misc
 *.log
 *.tsbuildinfo

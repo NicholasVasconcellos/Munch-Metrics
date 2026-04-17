@@ -76,7 +76,7 @@ export function LazyFoodThumbnail({
       ref={ref}
       className={className ?? `${sizeClass} rounded bg-muted flex items-center justify-center text-muted-foreground text-xs shrink-0`}
     >
-      {needsFetch && !imageData ? '' : '?'}
+      {imageData ? '?' : ''}
     </div>
   )
 }

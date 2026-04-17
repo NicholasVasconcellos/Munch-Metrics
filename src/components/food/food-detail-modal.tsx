@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog'
 import { FoodImage } from './food-image'
 import { getFoodDetail, type FoodDetailResult } from '@/lib/queries/get-food-detail'
+import { setCachedImage } from '@/lib/image-fetch-queue'
 import type { Nutrient } from '@/types/food'
 
 interface FoodDetailModalProps {
@@ -95,6 +96,7 @@ function ModalContent({ detail }: { detail: FoodDetailResult }) {
             alt={food.name}
             photographerName={image?.photographerName}
             photographerUrl={image?.photographerUrl}
+            source={image?.source}
             showAttribution
           />
 
@@ -232,6 +234,15 @@ export function FoodDetailModal({ foodId, onClose }: FoodDetailModalProps) {
                   fetchedAt: new Date(),
                 },
               }
+              // Share with the thumbnail queue cache so the table row
+              // doesn't re-fetch the same image
+              setCachedImage(foodId, {
+                imageUrl: json.image_url,
+                thumbnailUrl: json.thumbnail_url ?? null,
+                photographerName: json.photographer_name ?? null,
+                photographerUrl: json.photographer_url ?? null,
+                isPlaceholder: false,
+              })
             }
           }
         } catch {

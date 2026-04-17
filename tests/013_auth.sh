@@ -40,7 +40,7 @@ echo ""
 echo "-- Auth client: Supabase browser client --"
 assert_file_contains "$ROOT/src/lib/auth/client.ts" "createClient"
 assert_file_contains "$ROOT/src/lib/auth/client.ts" "NEXT_PUBLIC_SUPABASE_URL"
-assert_file_contains "$ROOT/src/lib/auth/client.ts" "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+assert_file_contains "$ROOT/src/lib/auth/client.ts" "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
 assert_file_contains "$ROOT/src/lib/auth/client.ts" "cookieStorage"
 assert_file_contains "$ROOT/src/lib/auth/client.ts" "export const supabase"
 
