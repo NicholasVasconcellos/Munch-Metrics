@@ -1,6 +1,6 @@
 - Fix image Retrieval from google
-- Current Grouping doesn't group by any relevant value
-- merge the worktree for custom views onto main
+- Current Grouping doesn't group by any relevant value | Food Group is not used
+- merge the worktree for custom views onto main \Done
 - Allow infine Columns to be rendered (Scroll to the right) currently overlaps the names when many columns shown
 - Get the Nutrient Profile quiz
   - log foods you tend to eat daily: get a micronutrient profile of what you have and what you are missing, all based on daily value reccomendations for each one. Grid where each cell is a micronutrient / vitamin and the color goes from red to green based on how much you have compared to daily value reccomendation.
